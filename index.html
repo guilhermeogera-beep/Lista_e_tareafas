@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Listas</title>
+<meta name="description" content="Tarefas e listas de compras, offline, no celular.">
+<meta name="theme-color" content="#0f1419">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./assets/icons/icon-192.png">
+<link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Listas">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <h1 id="viewTitle">Tarefas</h1>
+    <button class="icon-btn" id="btnMenu" aria-label="Mais opções" title="Mais opções">⋯</button>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ============ TAREFAS ============ -->
+  <section class="view" id="view-tarefas">
+    <div class="resumo" id="resumoTarefas"></div>
+
+    <form class="add-row" id="formTarefa" autocomplete="off">
+      <input type="text" id="inpTarefa" placeholder="Nova tarefa…" aria-label="Nova tarefa" maxlength="120" required>
+      <button type="submit" class="btn primary" aria-label="Adicionar tarefa">+</button>
+    </form>
+    <div class="add-extra">
+      <label class="chip-input">
+        <span>📅</span>
+        <input type="date" id="inpPrazo" aria-label="Prazo">
+      </label>
+      <select id="selPrioridade" aria-label="Prioridade">
+        <option value="0">Normal</option>
+        <option value="1">Importante</option>
+        <option value="2">Urgente</option>
+      </select>
+    </div>
+
+    <div class="toolbar">
+      <div class="seg" id="filtroTarefas" role="tablist">
+        <button data-filtro="pendentes" class="on">Pendentes</button>
+        <button data-filtro="todas">Todas</button>
+        <button data-filtro="concluidas">Concluídas</button>
+      </div>
+      <button class="btn ghost" id="btnLimparConcluidas">Limpar feitas</button>
+    </div>
+
+    <div id="listaTarefas" class="lista"></div>
+  </section>
+
+  <!-- ============ COMPRAS ============ -->
+  <section class="view hidden" id="view-compras">
+    <div class="lists-bar" id="barraListas"></div>
+
+    <div class="resumo" id="resumoCompras"></div>
+
+    <form class="add-row" id="formItem" autocomplete="off">
+      <input type="text" id="inpItem" placeholder="Adicionar item… (ex: 2 leite)" aria-label="Novo item" maxlength="80" required list="sugestoesItem">
+      <datalist id="sugestoesItem"></datalist>
+      <button type="submit" class="btn primary" aria-label="Adicionar item">+</button>
+    </form>
+
+    <div class="toolbar">
+      <button class="btn ghost" id="btnCompartilhar">Compartilhar</button>
+      <button class="btn ghost" id="btnDesmarcarTudo">Desmarcar tudo</button>
+      <button class="btn ghost" id="btnLimparComprados">Limpar comprados</button>
+    </div>
+
+    <div id="listaItens" class="lista"></div>
+    <h2 class="sec-title hidden" id="tituloComprados">No carrinho</h2>
+    <div id="listaComprados" class="lista"></div>
+  </section>
+
+</main>
+
+<!-- ============ TABS ============ -->
+<nav class="tabs" aria-label="Seções">
+  <button class="tab on" data-view="tarefas"><span class="ico">✅</span><span>Tarefas</span><span class="badge hidden" id="badgeTarefas"></span></button>
+  <button class="tab" data-view="compras"><span class="ico">🛒</span><span>Compras</span><span class="badge hidden" id="badgeCompras"></span></button>
+</nav>
+
+<!-- ============ MENU ============ -->
+<div class="sheet-bg hidden" id="menuBg"></div>
+<div class="sheet hidden" id="menu" role="dialog" aria-label="Opções">
+  <button class="sheet-item" id="mnInstalar" hidden>📲 Instalar no celular</button>
+  <button class="sheet-item" id="mnNovaLista">🗂️ Nova lista de compras</button>
+  <button class="sheet-item" id="mnRenomearLista">✏️ Renomear lista atual</button>
+  <button class="sheet-item danger" id="mnApagarLista">🗑️ Apagar lista atual</button>
+  <hr>
+  <button class="sheet-item" id="mnExportar">💾 Exportar backup</button>
+  <label class="sheet-item">📂 Importar backup <input type="file" id="inpImportar" accept="application/json" hidden></label>
+  <hr>
+  <button class="sheet-item" id="mnFechar">Fechar</button>
+</div>
+
+<!-- ============ EDITAR ============ -->
+<div class="sheet-bg hidden" id="editBg"></div>
+<div class="sheet hidden" id="edit" role="dialog" aria-label="Editar">
+  <form id="formEditar">
+    <div class="field"><label for="edTexto">Texto</label><input type="text" id="edTexto" maxlength="120" required></div>
+    <div class="field" id="edCampoQtd"><label for="edQtd">Quantidade</label><input type="text" id="edQtd" maxlength="20" placeholder="ex: 2, 500 g, 1 dúzia"></div>
+    <div class="field" id="edCampoPrazo"><label for="edPrazo">Prazo</label><input type="date" id="edPrazo"></div>
+    <div class="field" id="edCampoPrio"><label for="edPrio">Prioridade</label>
+      <select id="edPrio"><option value="0">Normal</option><option value="1">Importante</option><option value="2">Urgente</option></select>
+    </div>
+    <div class="field"><label for="edNota">Observação</label><input type="text" id="edNota" maxlength="200" placeholder="opcional"></div>
+    <div class="sheet-actions">
+      <button type="button" class="btn danger" id="edApagar">Apagar</button>
+      <span class="grow"></span>
+      <button type="button" class="btn ghost" id="edCancelar">Cancelar</button>
+      <button type="submit" class="btn primary">Salvar</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+
+<script src="./assets/js/app.js"></script>
+</body>
+</html>
