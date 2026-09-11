@@ -401,6 +401,17 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
 
+/* mostrar/ocultar resumo e opções extras (lembra a escolha) */
+function aplicarExtras() {
+  const on = estado.extras !== false;
+  document.querySelectorAll(".extras").forEach(el => el.classList.toggle("hidden", !on));
+  document.querySelectorAll("[data-extras]").forEach(b => b.setAttribute("aria-expanded", on));
+}
+document.querySelectorAll("[data-extras]").forEach(b => b.onclick = () => {
+  estado.extras = estado.extras === false; salvar(); aplicarExtras();
+});
+aplicarExtras();
+
 /* atalhos de teclado (desktop) */
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { fecharEditor(); fecharMenu(); }

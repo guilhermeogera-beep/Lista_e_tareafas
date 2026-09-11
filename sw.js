@@ -1,6 +1,6 @@
 /* Service worker - app shell offline.
    Troque a versão sempre que publicar mudanças, para o app atualizar nos celulares. */
-const VERSAO = 'listas-v1';
+const VERSAO = 'listas-v2';
 
 const ARQUIVOS = [
   './',

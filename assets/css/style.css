@@ -200,3 +200,16 @@ main{max-width:640px;margin:0 auto;padding:14px 14px 8px}
   box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:90vw;
 }
 .toast button{background:none;border:0;color:var(--accent);font-weight:700;margin-left:10px}
+
+/* ---------- bloco recolhível (resumo + opções extras) ---------- */
+.extras-toggle{
+  display:inline-flex;align-items:center;gap:4px;
+  background:none;border:0;color:var(--muted);font-size:12px;
+  padding:6px 2px;margin-top:4px;text-transform:uppercase;letter-spacing:.06em;
+}
+.extras-toggle .arrow{transition:transform .15s}
+.extras-toggle[aria-expanded="false"] .arrow{transform:rotate(-90deg)}
+.extras{margin-top:2px}
+.extras .resumo{margin-bottom:10px}
+.extras .lists-bar{padding-bottom:8px}
+.extras .add-extra{margin:0}

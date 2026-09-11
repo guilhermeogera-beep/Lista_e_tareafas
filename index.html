@@ -28,22 +28,25 @@
 
   <!-- ============ TAREFAS ============ -->
   <section class="view" id="view-tarefas">
-    <div class="resumo" id="resumoTarefas"></div>
-
     <form class="add-row" id="formTarefa" autocomplete="off">
       <input type="text" id="inpTarefa" placeholder="Nova tarefa…" aria-label="Nova tarefa" maxlength="120" required>
       <button type="submit" class="btn primary" aria-label="Adicionar tarefa">+</button>
     </form>
-    <div class="add-extra">
-      <label class="chip-input">
-        <span>📅</span>
-        <input type="date" id="inpPrazo" aria-label="Prazo">
-      </label>
-      <select id="selPrioridade" aria-label="Prioridade">
-        <option value="0">Normal</option>
-        <option value="1">Importante</option>
-        <option value="2">Urgente</option>
-      </select>
+
+    <button type="button" class="extras-toggle" data-extras aria-expanded="true">Detalhes <span class="arrow">▾</span></button>
+    <div class="extras" id="extrasTarefas">
+      <div class="resumo" id="resumoTarefas"></div>
+      <div class="add-extra">
+        <label class="chip-input">
+          <span>📅</span>
+          <input type="date" id="inpPrazo" aria-label="Prazo">
+        </label>
+        <select id="selPrioridade" aria-label="Prioridade">
+          <option value="0">Normal</option>
+          <option value="1">Importante</option>
+          <option value="2">Urgente</option>
+        </select>
+      </div>
     </div>
 
     <div class="toolbar">
@@ -60,15 +63,17 @@
 
   <!-- ============ COMPRAS ============ -->
   <section class="view hidden" id="view-compras">
-    <div class="lists-bar" id="barraListas"></div>
-
-    <div class="resumo" id="resumoCompras"></div>
-
     <form class="add-row" id="formItem" autocomplete="off">
       <input type="text" id="inpItem" placeholder="Adicionar item… (ex: 2 leite)" aria-label="Novo item" maxlength="80" required list="sugestoesItem">
       <datalist id="sugestoesItem"></datalist>
       <button type="submit" class="btn primary" aria-label="Adicionar item">+</button>
     </form>
+
+    <button type="button" class="extras-toggle" data-extras aria-expanded="true">Detalhes <span class="arrow">▾</span></button>
+    <div class="extras" id="extrasCompras">
+      <div class="lists-bar" id="barraListas"></div>
+      <div class="resumo" id="resumoCompras"></div>
+    </div>
 
     <div class="toolbar">
       <button class="btn ghost" id="btnCompartilhar">Compartilhar</button>
