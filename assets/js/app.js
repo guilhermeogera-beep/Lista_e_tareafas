@@ -25,7 +25,7 @@ let estado = null;    // cache por usuário
 let CHAVE = '';
 
 function estadoInicial() {
-  return { listas: [], membros: {}, tarefas: [], checks: {}, listaAtual: '', filtro: 'todas', extras: true, grupoAtual: '', fila: [] };
+  return { listas: [], membros: {}, tarefas: [], checks: {}, listaAtual: '', filtro: 'todas', extras: true, grupoAtual: '', fila: [], ordem: {} };
 }
 function carregar() {
   try { const e = JSON.parse(localStorage.getItem(CHAVE)); return e ? Object.assign(estadoInicial(), e) : estadoInicial(); }
@@ -36,6 +36,13 @@ function salvar() { try { localStorage.setItem(CHAVE, JSON.stringify(estado)); }
 const listaAtual = () => estado.listas.find(l => l.id === estado.listaAtual);
 const tarefasDaLista = () => estado.tarefas.filter(t => t.lista_id === estado.listaAtual && !t.apagado);
 const meuCheck = t => !!(estado.checks[t.id]?.[usuario.id]?.feito);
+// tarefa "um só" (todos === false) conta como feita se qualquer pessoa marcou
+const quemFez = t => Object.values(estado.checks[t.id] || {}).filter(c => c.feito);
+const feitoPara = t => t.todos === false ? quemFez(t).length > 0 : meuCheck(t);
+const CORES = ['#4da3ff', '#3ddc97', '#ffb347', '#ff6b9d', '#b388ff', '#4dd0e1', '#ff8a65', '#aed581'];
+const corDe = uidP => CORES[[...uidP].reduce((n, c) => n + c.charCodeAt(0), 0) % CORES.length];
+const inicial = m => (m.nome || m.email || '?').trim().charAt(0).toUpperCase();
+const avatar = (m, ok) => `<span class="avatar ${ok ? 'ok' : ''} ${m.user_id === usuario.id ? 'eu' : ''}" style="--cor:${corDe(m.user_id)}" title="${esc(m.nome || m.email)}">${esc(inicial(m))}</span>`;
 const membrosDaLista = id => estado.membros[id] || [];
 const souDono = l => l && l.dono === usuario.id;
 
@@ -87,7 +94,7 @@ $('#formAuth').onsubmit = async e => {
   $('#authBotao').disabled = true; $('#authErro').classList.add('hidden');
   let res;
   if (modoCadastro) {
-    res = await sb.auth.signUp({ email, password, options: { data: { nome: $('#authNome').value.trim() || email.split('@')[0] } } });
+    res = await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname, data: { nome: $('#authNome').value.trim() || email.split('@')[0] } } });
     if (!res.error && !res.data.session) {
       $('#authErro').textContent = 'Cadastro feito! Confirme pelo link enviado ao seu e-mail e depois entre.';
       $('#authErro').classList.remove('hidden'); $('#authTrocar').click();
@@ -104,6 +111,11 @@ $('#formAuth').onsubmit = async e => {
 };
 $('#mnSair').onclick = async () => { sheet('menuListas', false); await sb.auth.signOut(); };
 
+// volta do link de confirmação de e-mail: o supabase-js lê o token da URL e já loga
+const veioDoEmail = /type=(signup|magiclink|recovery|invite)/.test(location.hash);
+if (veioDoEmail) history.replaceState(null, '', location.pathname);
+let boasVindasMostradas = false;
+
 sb.auth.onAuthStateChange((_ev, sessao) => {
   if (sessao?.user) {
     if (usuario?.id === sessao.user.id) return;
@@ -111,6 +123,7 @@ sb.auth.onAuthStateChange((_ev, sessao) => {
     CHAVE = 'tarefas.' + usuario.id;
     estado = carregar();
     $('#menuUsuario').textContent = `${usuario.nome} · ${usuario.email}`;
+    if (veioDoEmail && !boasVindasMostradas) { boasVindasMostradas = true; setTimeout(() => toast(`E-mail confirmado! Bem-vindo(a), ${usuario.nome} 👋`), 300); }
     mostrar(estado.listaAtual ? 'lista' : 'listas');
     conectarRealtime(); recarregar().then(aplicarConvitePendente);
   } else {
@@ -199,7 +212,7 @@ function renderListas() {
   const ordem = estado.listas.slice().sort((a, b) => a.nome.localeCompare(b.nome));
   el.innerHTML = ordem.map(l => {
     const ts = estado.tarefas.filter(t => t.lista_id === l.id && !t.apagado);
-    const pend = ts.filter(t => !meuCheck(t)).length;
+    const pend = ts.filter(t => !feitoPara(t)).length;
     const n = membrosDaLista(l.id).length;
     return `<div class="item lista-card" data-id="${l.id}">
       <span class="ico">${l.compartilhada ? '👥' : '🔒'}</span>
@@ -237,6 +250,23 @@ $('#mnRenomear').onclick = () => {
   const l = listaAtual();
   const nome = prompt('Novo nome da lista:', l.nome);
   if (nome && nome.trim()) atualizarLista({ nome: capitalizar(nome.trim()) });
+};
+$('#mnDuplicar').onclick = () => {
+  sheet('menu', false);
+  const l = listaAtual();
+  const nome = prompt('Nome da nova lista:', l.nome + ' (cópia)'); if (!nome || !nome.trim()) return;
+  const nova = { id: uid(), nome: capitalizar(nome.trim()), dono: usuario.id, compartilhada: false, usar_prazo: l.usar_prazo, grupos: l.grupos.slice(), criado: agora(), atualizado: agora(), apagada: false, codigo: novoCodigo() };
+  estado.listas.push(nova); estado.membros[nova.id] = [{ user_id: usuario.id, email: usuario.email, nome: usuario.nome }];
+  enfileirar('listas', nova, true);
+  const base = agora();
+  // copia as tarefas sem os checks (fica tudo pendente, como um modelo)
+  tarefasDaLista().slice().sort(ordenar).forEach((t, i) => {
+    const c = { id: uid(), lista_id: nova.id, texto: t.texto, prazo: '', prio: t.prio, nota: t.nota, grupo: t.grupo, todos: t.todos !== false, criado_por: usuario.id, criado: base - i, atualizado: base, apagado: false };
+    estado.tarefas.push(c); enfileirar('tarefas', c, true);
+  });
+  salvar(); enviarFila();
+  estado.listaAtual = nova.id; estado.grupoAtual = ''; salvar(); mostrar('lista');
+  toast(`Lista "${nova.nome}" criada (privada). Compartilhe pelo menu se quiser.`);
 };
 $('#mnApagarLista').onclick = () => {
   sheet('menu', false);
@@ -349,42 +379,56 @@ $('#listaMembros').onclick = async e => {
 };
 
 /* ============ TAREFAS ============ */
+/* + abre o popup de confirmação (grupo, quem faz, prioridade, prazo, observação) */
 $('#formTarefa').onsubmit = e => {
   e.preventDefault();
   const texto = $('#inpTarefa').value.trim(); if (!texto) return;
   const l = listaAtual();
-  // com grupos na lista e nenhum chip selecionado, pergunta em qual grupo a tarefa entra
-  if (l.grupos.length && !estado.grupoAtual) {
-    $('#escolherGrupoTexto').textContent = `"${capitalizar(texto)}"`;
-    $('#opcoesGrupo').innerHTML = l.grupos.map(g => `<button type="button" data-grupo="${esc(g)}">${esc(g)}</button>`).join('') + '<button type="button" class="sem" data-grupo="">Sem grupo</button>';
-    sheet('escolherGrupo', true);
-    return;
-  }
-  adicionarTarefa(estado.grupoAtual || '');
+  $('#ntTitulo').textContent = capitalizar(texto);
+  $('#ntCampoGrupo').classList.toggle('hidden', !l.grupos.length);
+  $('#ntGrupos').innerHTML = l.grupos.map(g => `<button type="button" data-grupo="${esc(g)}" class="${estado.grupoAtual === g ? 'on' : ''}">${esc(g)}</button>`).join('') +
+    `<button type="button" class="sem ${estado.grupoAtual ? '' : 'on'}" data-grupo="">Sem grupo</button>`;
+  $('#ntCampoTodos').classList.toggle('hidden', !l.compartilhada);
+  $('input[name=ntTodos][value="1"]').checked = true;
+  $('#ntPrio').value = '0'; $('#ntNota').value = ''; $('#ntPrazo').value = '';
+  $('#ntCampoPrazo').classList.toggle('hidden', !l.usar_prazo);
+  sheet('novaTarefa', true);
 };
-$('#opcoesGrupo').onclick = e => {
+$('#ntGrupos').onclick = e => {
   const b = e.target.closest('[data-grupo]'); if (!b) return;
-  sheet('escolherGrupo', false);
-  adicionarTarefa(b.dataset.grupo);
+  document.querySelectorAll('#ntGrupos button').forEach(x => x.classList.toggle('on', x === b));
 };
-
-function adicionarTarefa(grupo) {
+$('#ntCancelar').onclick = () => sheet('novaTarefa', false);
+$('#formNovaTarefa').onsubmit = e => {
+  e.preventDefault();
   const inp = $('#inpTarefa'); const texto = inp.value.trim(); if (!texto) return;
   const l = listaAtual();
-  const t = { id: uid(), lista_id: l.id, texto: capitalizar(texto), prazo: l.usar_prazo ? ($('#inpPrazo').value || '') : '', prio: +$('#selPrioridade').value || 0,
-              nota: '', grupo, criado_por: usuario.id, criado: agora(), atualizado: agora(), apagado: false };
+  const grupo = $('#ntGrupos button.on')?.dataset.grupo || '';
+  const t = { id: uid(), lista_id: l.id, texto: capitalizar(texto), prazo: l.usar_prazo ? ($('#ntPrazo').value || '') : '', prio: +$('#ntPrio').value || 0,
+              nota: $('#ntNota').value.trim(), grupo, todos: !l.compartilhada || $('input[name=ntTodos]:checked').value === '1',
+              criado_por: usuario.id, criado: agora(), atualizado: agora(), apagado: false };
   estado.tarefas.unshift(t);
-  inp.value = ''; $('#inpPrazo').value = ''; $('#selPrioridade').value = '0';
-  if (estado.filtro === 'concluidas') estado.filtro = 'pendentes';
+  // entra no topo da ordem manual, se houver
+  if (estado.ordem[l.id]) estado.ordem[l.id].unshift(t.id);
+  inp.value = '';
+  if (estado.filtro === 'concluidas') estado.filtro = 'todas';
+  sheet('novaTarefa', false);
   enfileirar('tarefas', t); inp.focus();
-}
+};
 $('#filtro').onclick = e => { const b = e.target.closest('button'); if (!b) return; estado.filtro = b.dataset.filtro; salvar(); render(); };
 $('#btnExtras').onclick = () => { estado.extras = !estado.extras; salvar(); render(); };
 $('#mnPrazo').onclick = () => atualizarLista({ usar_prazo: !listaAtual().usar_prazo });
+let busca = '';
+$('#inpBusca').oninput = e => { busca = e.target.value.trim().toLowerCase(); render(); };
 
 function marcar(t) {
   const c = estado.checks[t.id]?.[usuario.id];
   const feito = !(c && c.feito);
+  if (t.todos === false && feito) {
+    // "um só": se outra pessoa já fez, não tem o que marcar
+    const outro = quemFez(t).find(x => x.user_id !== usuario.id);
+    if (outro) { const m = membrosDaLista(t.lista_id).find(x => x.user_id === outro.user_id); return toast(`Já feita por ${m ? (m.nome || m.email) : 'outra pessoa'}`); }
+  }
   const novo = { tarefa_id: t.id, user_id: usuario.id, feito, concluido: feito ? agora() : 0, atualizado: agora() };
   (estado.checks[t.id] ||= {})[usuario.id] = novo;
   enfileirar('checks', novo);
@@ -395,10 +439,18 @@ function apagarTarefa(t) {
   toast('Tarefa apagada', () => { t.apagado = false; t.atualizado = agora(); enfileirar('tarefas', t); });
 }
 
+/* ordem: pendentes antes das feitas; entre as pendentes vale a ordem manual (arrastar), senão prioridade/prazo/data */
 function ordenar(a, b) {
-  const fa = meuCheck(a), fb = meuCheck(b);
+  const fa = feitoPara(a), fb = feitoPara(b);
   if (fa !== fb) return fa - fb;
   if (fa) return (estado.checks[b.id]?.[usuario.id]?.concluido || 0) - (estado.checks[a.id]?.[usuario.id]?.concluido || 0);
+  const ord = estado.ordem[estado.listaAtual];
+  if (ord) {
+    const ia = ord.indexOf(a.id), ib = ord.indexOf(b.id);
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
+  }
   if (b.prio !== a.prio) return b.prio - a.prio;
   if (a.prazo !== b.prazo) return (a.prazo || '9999') < (b.prazo || '9999') ? -1 : 1;
   return b.criado - a.criado;
@@ -408,36 +460,36 @@ function renderLista() {
   const l = listaAtual(); if (!l) return;
   const h = hoje();
   const todas = tarefasDaLista();
-  const pend = todas.filter(t => !meuCheck(t));
+  const pend = todas.filter(t => !feitoPara(t));
   const atras = pend.filter(t => t.prazo && t.prazo < h).length;
   const paraHoje = pend.filter(t => t.prazo === h).length;
   $('#resumo').innerHTML = l.usar_prazo
     ? `<div class="stat"><b>${pend.length}</b><span>pendentes</span></div><div class="stat ${atras ? 'warn' : ''}"><b>${atras}</b><span>atrasadas</span></div><div class="stat"><b>${paraHoje}</b><span>para hoje</span></div>`
     : `<div class="stat"><b>${pend.length}</b><span>pendentes</span></div><div class="stat"><b>${todas.length - pend.length}</b><span>concluídas</span></div><div class="stat"><b>${todas.length}</b><span>no total</span></div>`;
   document.querySelectorAll('#filtro button').forEach(b => b.classList.toggle('on', b.dataset.filtro === estado.filtro));
-  $('#campoPrazo').classList.toggle('hidden', !l.usar_prazo);
   $('#swPrazo').classList.toggle('on', !!l.usar_prazo);
   $('#extras').classList.toggle('hidden', !estado.extras);
   $('#btnExtras').setAttribute('aria-expanded', estado.extras);
   $('#mnApagarLista').classList.toggle('hidden', !souDono(l));
   $('#mnSairLista').classList.toggle('hidden', souDono(l));
   $('#mnMembros').classList.toggle('hidden', !l.compartilhada && !souDono(l));
-  $('#dica').textContent = l.compartilhada ? 'Bolinha conclui · toque vê quem já fez · segure edita' : 'Bolinha conclui · toque vê detalhes · segure edita';
+  $('#dica').textContent = (l.compartilhada ? 'Bolinha conclui · toque vê quem já fez · segure edita' : 'Bolinha conclui · toque vê detalhes · segure edita') + ' · ≡ arrasta';
   renderGrupos();
 
   let lista = todas.slice().sort(ordenar);
   if (estado.grupoAtual) lista = lista.filter(t => t.grupo === estado.grupoAtual);
-  if (estado.filtro === 'pendentes') lista = lista.filter(t => !meuCheck(t));
-  if (estado.filtro === 'concluidas') lista = lista.filter(t => meuCheck(t));
+  if (estado.filtro === 'pendentes') lista = lista.filter(t => !feitoPara(t));
+  if (estado.filtro === 'concluidas') lista = lista.filter(t => feitoPara(t));
+  if (busca) lista = lista.filter(t => (t.texto + ' ' + t.nota + ' ' + t.grupo).toLowerCase().includes(busca));
 
   const el = $('#lista');
   if (!lista.length) {
-    el.innerHTML = `<div class="vazio"><b>${estado.filtro === 'concluidas' ? '📭' : '🎉'}</b>${estado.filtro === 'concluidas' ? 'Nada concluído ainda' : 'Nenhuma tarefa pendente'}</div>`;
+    el.innerHTML = `<div class="vazio"><b>${busca ? '🔍' : estado.filtro === 'concluidas' ? '📭' : '🎉'}</b>${busca ? 'Nada encontrado' : estado.filtro === 'concluidas' ? 'Nada concluído ainda' : 'Nenhuma tarefa pendente'}</div>`;
     return;
   }
   const ms = membrosDaLista(l.id);
   el.innerHTML = lista.map(t => {
-    const feito = meuCheck(t);
+    const feito = feitoPara(t);
     let prazo = '';
     if (t.prazo && l.usar_prazo) {
       const cls = feito ? '' : t.prazo < h ? 'late' : t.prazo === h ? 'today' : '';
@@ -448,22 +500,28 @@ function renderLista() {
     const grupo = t.grupo && !estado.grupoAtual ? `<span class="grupo">${esc(t.grupo)}</span>` : '';
     let quem = '';
     if (l.compartilhada && ms.length > 1) {
-      const fizeram = ms.filter(m => estado.checks[t.id]?.[m.user_id]?.feito);
-      quem = `<span class="quem ${fizeram.length === ms.length ? 'todos' : ''}" title="${esc(fizeram.map(m => m.nome || m.email).join(', '))}">👥 ${fizeram.length}/${ms.length}</span>`;
+      if (t.todos === false) {
+        const f = quemFez(t)[0]; const m = f && ms.find(x => x.user_id === f.user_id);
+        quem = `<span class="umso">👤 ${m ? esc(m.user_id === usuario.id ? 'você fez' : (m.nome || m.email) + ' fez') : 'um só faz'}</span>`;
+      } else {
+        quem = `<span class="avatares">${ms.map(m => avatar(m, !!estado.checks[t.id]?.[m.user_id]?.feito)).join('')}</span>`;
+      }
     }
     const meta = prazo || prio || nota || grupo || quem ? `<div class="meta">${grupo}${prazo}${prio}${nota}${quem}</div>` : '';
     return `<div class="item prio-${t.prio} ${feito ? 'feito' : ''}" data-id="${t.id}">
       <span class="check ${feito ? 'on' : ''}">${feito ? '✓' : ''}</span>
       <div class="body"><span class="txt">${esc(t.texto)}</span>${meta}</div>
+      <span class="handle" aria-label="Arrastar para reordenar">≡</span>
     </div>`;
   }).join('');
 }
 
-/* Toque = marca/desmarca (o meu check). Segurar (~500 ms) = editor. */
+/* Bolinha = marca. Toque = detalhes. Segurar (~500 ms) = editor. ≡ = arrastar. */
 const SEGURAR_MS = 500;
 let pressTimer = null, pressAbriu = false, pressX = 0, pressY = 0;
 const listaEl = $('#lista');
 listaEl.addEventListener('pointerdown', e => {
+  if (e.target.closest('.handle')) return iniciarArraste(e);
   const item = e.target.closest('.item'); if (!item) return;
   pressAbriu = false; pressX = e.clientX; pressY = e.clientY;
   clearTimeout(pressTimer);
@@ -480,11 +538,42 @@ listaEl.addEventListener('pointermove', e => { if (Math.abs(e.clientX - pressX) 
 listaEl.addEventListener('contextmenu', e => e.preventDefault());
 listaEl.addEventListener('click', e => {
   if (pressAbriu) { pressAbriu = false; return; }
+  if (e.target.closest('.handle')) return;
   const item = e.target.closest('.item'); if (!item) return;
   const t = estado.tarefas.find(x => x.id === item.dataset.id); if (!t) return;
   if (e.target.closest('.check')) marcar(t);   // bolinha = concluir
-  else abrirInfo(t);                             // resto do cartão = quem já concluiu
+  else abrirInfo(t);                             // resto do cartão = detalhes / quem já fez
 });
+
+/* arrastar pela alça ≡ (ordem só neste aparelho) */
+let arrastando = null;
+function iniciarArraste(e) {
+  const item = e.target.closest('.item'); if (!item) return;
+  e.preventDefault();
+  arrastando = item; item.classList.add('arrastando');
+  listaEl.setPointerCapture(e.pointerId);
+  const mover = ev => {
+    const alvo = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('#lista .item');
+    if (!alvo || alvo === arrastando) return;
+    const r = alvo.getBoundingClientRect();
+    if (ev.clientY < r.top + r.height / 2) listaEl.insertBefore(arrastando, alvo);
+    else listaEl.insertBefore(arrastando, alvo.nextSibling);
+  };
+  const soltar = () => {
+    listaEl.removeEventListener('pointermove', mover);
+    listaEl.removeEventListener('pointerup', soltar);
+    listaEl.removeEventListener('pointercancel', soltar);
+    arrastando.classList.remove('arrastando'); arrastando = null;
+    // a ordem visível vira a ordem manual das pendentes desta lista
+    const ids = [...listaEl.querySelectorAll('.item')].map(x => x.dataset.id);
+    const antiga = (estado.ordem[estado.listaAtual] || []).filter(id => !ids.includes(id));
+    estado.ordem[estado.listaAtual] = ids.concat(antiga);
+    salvar(); render();
+  };
+  listaEl.addEventListener('pointermove', mover);
+  listaEl.addEventListener('pointerup', soltar);
+  listaEl.addEventListener('pointercancel', soltar);
+}
 
 /* ============ DETALHES (toque) ============ */
 let infoTarefa = null;
@@ -498,10 +587,11 @@ function abrirInfo(t) {
   if (t.prazo && l.usar_prazo) linhas.push(`<div class="linha">📅 ${t.prazo === hoje() ? 'hoje' : fmtData(t.prazo)}</div>`);
   if (t.prio) linhas.push(`<div class="linha">${t.prio === 2 ? '🔴 urgente' : '🟡 importante'}</div>`);
   if (t.nota) linhas.push(`<div class="linha">📝 ${esc(t.nota)}</div>`);
+  if (l.compartilhada) linhas.push(`<div class="linha">${t.todos === false ? '👤 Um só precisa fazer' : '👥 Todos precisam fazer'}</div>`);
   if (l.compartilhada && autor) linhas.push(`<div class="linha">Criada por ${esc(nomeDe(autor))}</div>`);
   const pessoas = l.compartilhada ? ms : ms.filter(m => m.user_id === usuario.id);
   linhas.push(pessoas.map(m => { const ok = !!estado.checks[t.id]?.[m.user_id]?.feito;
-    return `<div class="quem-linha ${ok ? '' : 'nao'}"><span class="check ${ok ? 'on' : ''}">${ok ? '✓' : ''}</span><span>${esc(nomeDe(m))}</span><span class="grow"></span><span class="linha">${ok ? 'concluiu' : 'pendente'}</span></div>`; }).join(''));
+    return `<div class="quem-linha ${ok ? '' : 'nao'}">${avatar(m, ok)}<span>${esc(nomeDe(m))}</span><span class="grow"></span><span class="linha">${ok ? '✓ concluiu' : 'pendente'}</span></div>`; }).join(''));
   $('#infoTitulo').textContent = t.texto;
   $('#infoCorpo').innerHTML = linhas.join('');
   sheet('info', true);
@@ -519,6 +609,8 @@ function abrirEditor(t) {
   $('#edCampoGrupo').classList.toggle('hidden', !l.grupos.length);
   $('#edGrupo').innerHTML = '<option value="">Sem grupo</option>' + l.grupos.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('');
   $('#edGrupo').value = l.grupos.includes(t.grupo) ? t.grupo : '';
+  $('#edCampoTodos').classList.toggle('hidden', !l.compartilhada);
+  $('#edTodos').value = t.todos === false ? '0' : '1';
   const ms = membrosDaLista(l.id);
   const nomeDe = m => m.user_id === usuario.id ? 'você' : (m.nome || m.email);
   const autor = ms.find(m => m.user_id === t.criado_por);
@@ -536,7 +628,9 @@ $('#formEditar').onsubmit = e => {
   const t = editando, l = listaAtual();
   t.texto = $('#edTexto').value.trim() || t.texto; t.nota = $('#edNota').value.trim();
   if (l.usar_prazo) t.prazo = $('#edPrazo').value;
-  t.prio = +$('#edPrio').value || 0; t.grupo = $('#edGrupo').value || ''; t.atualizado = agora();
+  t.prio = +$('#edPrio').value || 0; t.grupo = $('#edGrupo').value || '';
+  if (l.compartilhada) t.todos = $('#edTodos').value === '1';
+  t.atualizado = agora();
   fecharEditor(); enfileirar('tarefas', t);
 };
 $('#edApagar').onclick = () => { if (!editando) return; const t = editando; fecharEditor(); apagarTarefa(t); };
@@ -545,7 +639,7 @@ $('#mnDesmarcarTodas').onclick = () => {
   sheet('menu', false);
   // só desmarca os SEUS checks; as tarefas continuam na lista para reutilizar
   const feitas = tarefasDaLista().filter(t => meuCheck(t));
-  if (!feitas.length) return toast('Nenhuma tarefa marcada');
+  if (!feitas.length) return toast('Nenhuma tarefa marcada por você');
   if (!confirm(`Desmarcar ${feitas.length} tarefa(s)? Elas continuam na lista, só voltam a ficar pendentes para você.`)) return;
   feitas.forEach(t => marcar(t));
   toast(`${feitas.length} tarefa(s) desmarcada(s)`);
@@ -555,7 +649,7 @@ $('#mnDesmarcarTodas').onclick = () => {
 function renderGrupos() {
   const l = listaAtual(); const el = $('#barraGrupos');
   if (!l || !l.grupos.length) { el.innerHTML = ''; return; }
-  const conta = g => tarefasDaLista().filter(t => t.grupo === g && !meuCheck(t)).length;
+  const conta = g => tarefasDaLista().filter(t => t.grupo === g && !feitoPara(t)).length;
   el.innerHTML = `<button data-grupo="" class="${estado.grupoAtual ? '' : 'on'}">Todos</button>` +
     l.grupos.map(g => { const n = conta(g); return `<button data-grupo="${esc(g)}" class="${estado.grupoAtual === g ? 'on' : ''}">${esc(g)}${n ? ' · ' + n : ''}</button>`; }).join('');
 }
@@ -579,7 +673,7 @@ function renderSugestoes() {
     const ja = l.grupos.some(g => g.toLowerCase() === s.nome.toLowerCase());
     return `<button type="button" class="sugestao ${ja ? 'ja' : ''}" data-nome="${esc(s.nome)}">
       <span class="ico">${s.icone}</span>
-      <span class="body"><span class="txt">${esc(s.nome)}</span><span class="n">${s.itens.length} itens · ${esc(s.itens.slice(0, 4).join(', '))}…</span></span>
+      <span class="body"><span class="txt">${esc(s.nome)}</span><span class="n">${s.itens.length} itens · ${esc(s.itens.slice(0, 4).map(i => i.replace(/^1:/, '')).join(', '))}…</span></span>
       <span class="add">${ja ? 'já tem' : '+ Adicionar'}</span></button>`;
   }).join('');
 }
@@ -589,13 +683,15 @@ $('#listaSugestoes').onclick = e => {
   const s = (window.SUGESTOES_GRUPOS || []).find(x => x.nome === b.dataset.nome); if (!s) return;
   const l = listaAtual();
   const existentes = tarefasDaLista().map(t => t.texto.toLowerCase());
-  const novos = s.itens.filter(i => !existentes.includes(i.toLowerCase()));
+  const novos = s.itens.filter(i => !existentes.includes(i.replace(/^1:/, '').toLowerCase()));
   const jaTem = l.grupos.some(g => g.toLowerCase() === s.nome.toLowerCase());
   if (!confirm(`${jaTem ? 'Completar' : 'Criar'} o grupo "${s.nome}" com ${novos.length} item(ns)?`)) return;
   const grupo = l.grupos.find(g => g.toLowerCase() === s.nome.toLowerCase()) || s.nome;
   if (!jaTem) atualizarLista({ grupos: [...l.grupos, grupo] });
   const base = agora();
-  novos.forEach((texto, i) => enfileirar('tarefas', { id: uid(), lista_id: l.id, texto, prazo: '', prio: 0, nota: '', grupo, criado_por: usuario.id, criado: base - i, atualizado: base, apagado: false }, true));
+  // item com prefixo "1:" = basta uma pessoa levar/fazer (todos: false); só faz diferença em lista compartilhada
+  novos.forEach((item, i) => { const umSo = item.startsWith('1:'); const texto = umSo ? item.slice(2) : item;
+    enfileirar('tarefas', { id: uid(), lista_id: l.id, texto, prazo: '', prio: 0, nota: '', grupo, todos: !(umSo && l.compartilhada), criado_por: usuario.id, criado: base - i, atualizado: base, apagado: false }, true); });
   // enfileirar(..., true) só empilha; agora manda tudo de uma vez
   estado.tarefas.push(...estado.fila.filter(f => f.tabela === 'tarefas' && !estado.tarefas.some(t => t.id === f.linha.id)).map(f => f.linha));
   salvar(); render(); enviarFila();
@@ -636,6 +732,16 @@ function render() {
   if (view === 'listas') renderListas();
   else if (view === 'lista') renderLista();
 }
+
+/* ============ TEMA (local) ============ */
+function aplicarTema() {
+  const claro = localStorage.getItem('tema') === 'claro';
+  document.documentElement.dataset.theme = claro ? 'light' : '';
+  document.querySelector('meta[name=theme-color]').content = claro ? '#f4f6f8' : '#0f1419';
+  $('#swTema').classList.toggle('on', claro);
+}
+$('#mnTema').onclick = () => { localStorage.setItem('tema', localStorage.getItem('tema') === 'claro' ? 'escuro' : 'claro'); aplicarTema(); };
+aplicarTema();
 
 /* ============ PWA ============ */
 let promptInstalar = null;

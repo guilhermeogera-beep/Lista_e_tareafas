@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Tarefas">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="./assets/css/style.css?v=19">
+<link rel="stylesheet" href="./assets/css/style.css?v=21">
 </head>
 <body>
 
@@ -61,17 +61,7 @@
     <button type="button" class="extras-toggle" id="btnExtras" aria-expanded="true">Detalhes <span class="arrow">▾</span></button>
     <div class="extras" id="extras">
       <div class="resumo" id="resumo"></div>
-      <div class="add-extra">
-        <label class="chip-input" id="campoPrazo">
-          <span>📅</span>
-          <input type="date" id="inpPrazo" aria-label="Prazo">
-        </label>
-        <select id="selPrioridade" aria-label="Prioridade">
-          <option value="0">Normal</option>
-          <option value="1">Importante</option>
-          <option value="2">Urgente</option>
-        </select>
-      </div>
+      <input type="search" id="inpBusca" class="busca" placeholder="Buscar na lista…" aria-label="Buscar">
       <div class="toolbar">
         <div class="seg" id="filtro" role="tablist">
           <button data-filtro="todas" class="on">Todas</button>
@@ -93,6 +83,7 @@
 <div class="sheet hidden" id="menuListas" role="dialog" aria-label="Opções">
   <p class="hint" id="menuUsuario"></p>
   <button class="sheet-item" id="mnInstalar" hidden>📲 Instalar no celular</button>
+  <button class="sheet-item" id="mnTema">🌗 Tema claro <span class="switch" id="swTema"></span></button>
   <button class="sheet-item" id="mnSair">🚪 Sair da conta</button>
   <hr>
   <button class="sheet-item" id="menuListasFechar">Fechar</button>
@@ -106,6 +97,7 @@
   <hr>
   <button class="sheet-item" id="mnMembros">👥 Compartilhar / pessoas da lista…</button>
   <button class="sheet-item" id="mnRenomear">✏️ Renomear lista</button>
+  <button class="sheet-item" id="mnDuplicar">📋 Duplicar lista (como modelo)</button>
   <hr>
   <button class="sheet-item" id="mnDesmarcarTodas">🔄 Desmarcar todas as tarefas</button>
   <button class="sheet-item danger" id="mnApagarLista">🗑️ Apagar lista</button>
@@ -142,12 +134,25 @@
   <div class="sheet-actions"><span class="grow"></span><button type="button" class="btn ghost" id="membrosFechar">Fechar</button></div>
 </div>
 
-<!-- ============ ESCOLHER GRUPO (ao adicionar) ============ -->
-<div class="sheet-bg hidden" id="escolherGrupoBg"></div>
-<div class="sheet hidden" id="escolherGrupo" role="dialog" aria-label="Escolher grupo">
-  <h2 class="sheet-title">Em qual grupo?</h2>
-  <p class="hint" id="escolherGrupoTexto"></p>
-  <div class="opcoes-grupo" id="opcoesGrupo"></div>
+<!-- ============ NOVA TAREFA (popup do +) ============ -->
+<div class="sheet-bg hidden" id="novaTarefaBg"></div>
+<div class="sheet hidden" id="novaTarefa" role="dialog" aria-label="Nova tarefa">
+  <form id="formNovaTarefa" autocomplete="off">
+    <h2 class="sheet-title" id="ntTitulo"></h2>
+    <div class="field" id="ntCampoGrupo"><label>Grupo</label><div class="opcoes-grupo" id="ntGrupos"></div></div>
+    <div class="field" id="ntCampoTodos"><label>Quem precisa fazer</label>
+      <div class="tipo-lista">
+        <label class="tipo"><input type="radio" name="ntTodos" value="1" checked><span><b>👥 Todos</b><small>Cada pessoa marca o seu check</small></span></label>
+        <label class="tipo"><input type="radio" name="ntTodos" value="0"><span><b>👤 Um só</b><small>Quem fizer marca, e fica feita para todo mundo</small></span></label>
+      </div>
+    </div>
+    <div class="field"><label for="ntPrio">Prioridade</label>
+      <select id="ntPrio"><option value="0">Normal</option><option value="1">Importante</option><option value="2">Urgente</option></select>
+    </div>
+    <div class="field" id="ntCampoPrazo"><label for="ntPrazo">Prazo</label><input type="date" id="ntPrazo"></div>
+    <div class="field"><label for="ntNota">Observação</label><input type="text" id="ntNota" maxlength="200" placeholder="opcional"></div>
+    <div class="sheet-actions"><span class="grow"></span><button type="button" class="btn ghost" id="ntCancelar">Cancelar</button><button type="submit" class="btn primary">Adicionar</button></div>
+  </form>
 </div>
 
 <!-- ============ GRUPOS ============ -->
@@ -183,6 +188,9 @@
       <select id="edPrio"><option value="0">Normal</option><option value="1">Importante</option><option value="2">Urgente</option></select>
     </div>
     <div class="field" id="edCampoGrupo"><label for="edGrupo">Grupo</label><select id="edGrupo"></select></div>
+    <div class="field" id="edCampoTodos"><label for="edTodos">Quem precisa fazer</label>
+      <select id="edTodos"><option value="1">👥 Todos (cada um marca o seu)</option><option value="0">👤 Um só (quem fizer marca para todos)</option></select>
+    </div>
     <div class="field"><label for="edNota">Observação</label><input type="text" id="edNota" maxlength="200" placeholder="opcional"></div>
     <p class="hint" id="edQuem"></p>
     <div class="sheet-actions">
@@ -196,9 +204,9 @@
 
 <div class="toast hidden" id="toast"></div>
 
-<script src="./config.js?v=19"></script>
+<script src="./config.js?v=21"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="./assets/js/sugestoes.js?v=19"></script>
-<script src="./assets/js/app.js?v=19"></script>
+<script src="./assets/js/sugestoes.js?v=21"></script>
+<script src="./assets/js/app.js?v=21"></script>
 </body>
 </html>
