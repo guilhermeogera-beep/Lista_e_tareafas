@@ -12,7 +12,8 @@ e sincroniza entre os aparelhos pelo Supabase.
   e-mail em *Pessoas da lista* (menu ⋯). Uma lista privada vira compartilhada ao clicar em Compartilhar.
 - **Check por pessoa**: em lista compartilhada, cada membro marca o seu check. O cartão mostra
   quantos já fizeram (ex.: 👥 1/3).
-- **Toque** no cartão marca/desmarca; **segure** (~meio segundo) abre o editor.
+- **Bolinha** marca/desmarca o seu check; **toque** no cartão mostra detalhes e quem já concluiu;
+  **segure** (~meio segundo) abre o editor.
 - **Grupos**, **prazo**, **prioridade**, **observação** — por lista, no menu ⋯.
 - Funciona offline: o que você fizer sem internet sobe quando reconectar.
 

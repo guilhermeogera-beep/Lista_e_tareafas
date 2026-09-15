@@ -270,3 +270,13 @@ main{max-width:640px;margin:0 auto;padding:14px 14px 8px}
 .sugestao .n{font-size:12px;color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sugestao .add{color:var(--accent);font-weight:700;font-size:14px;flex:0 0 auto}
 .sugestao.ja{opacity:.5}
+
+/* ---------- detalhes da tarefa (toque) ---------- */
+.info-corpo{display:flex;flex-direction:column;gap:8px;font-size:15px}
+.info-corpo .quem-linha{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.info-corpo .quem-linha .check{flex:0 0 22px;width:22px;height:22px;font-size:12px}
+.info-corpo .quem-linha.nao{opacity:.55}
+.info-corpo .linha{color:var(--muted);font-size:14px}
+/* bolinha = alvo de toque maior */
+.item .check{cursor:pointer;position:relative}
+.item .check::before{content:"";position:absolute;inset:-12px}

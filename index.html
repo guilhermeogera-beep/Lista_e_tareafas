@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Tarefas">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="./assets/css/style.css?v=16">
+<link rel="stylesheet" href="./assets/css/style.css?v=18">
 </head>
 <body>
 
@@ -83,7 +83,7 @@
     </div>
 
     <div class="grupos" id="barraGrupos"></div>
-    <p class="hint" id="dica">Toque para concluir · segure para editar</p>
+    <p class="hint" id="dica">Bolinha conclui · toque vê detalhes · segure edita</p>
     <div id="lista" class="lista"></div>
   </section>
 
@@ -166,6 +166,14 @@
   <div class="sheet-actions"><span class="grow"></span><button type="button" class="btn ghost" id="gruposFechar">Fechar</button></div>
 </div>
 
+<!-- ============ DETALHES DA TAREFA (toque) ============ -->
+<div class="sheet-bg hidden" id="infoBg"></div>
+<div class="sheet hidden" id="info" role="dialog" aria-label="Detalhes da tarefa">
+  <h2 class="sheet-title" id="infoTitulo"></h2>
+  <div id="infoCorpo" class="info-corpo"></div>
+  <div class="sheet-actions"><button type="button" class="btn ghost" id="infoEditar">Editar</button><span class="grow"></span><button type="button" class="btn primary" id="infoFechar">Fechar</button></div>
+</div>
+
 <!-- ============ EDITAR TAREFA ============ -->
 <div class="sheet-bg hidden" id="editBg"></div>
 <div class="sheet hidden" id="edit" role="dialog" aria-label="Editar tarefa">
@@ -189,9 +197,9 @@
 
 <div class="toast hidden" id="toast"></div>
 
-<script src="./config.js?v=16"></script>
+<script src="./config.js?v=18"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="./assets/js/sugestoes.js?v=16"></script>
-<script src="./assets/js/app.js?v=16"></script>
+<script src="./assets/js/sugestoes.js?v=18"></script>
+<script src="./assets/js/app.js?v=18"></script>
 </body>
 </html>

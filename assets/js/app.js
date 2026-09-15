@@ -422,7 +422,7 @@ function renderLista() {
   $('#mnApagarLista').classList.toggle('hidden', !souDono(l));
   $('#mnSairLista').classList.toggle('hidden', souDono(l));
   $('#mnMembros').classList.toggle('hidden', !l.compartilhada && !souDono(l));
-  $('#dica').textContent = l.compartilhada ? 'Toque para concluir (só o seu check) · segure para editar' : 'Toque para concluir · segure para editar';
+  $('#dica').textContent = l.compartilhada ? 'Bolinha conclui · toque vê quem já fez · segure edita' : 'Bolinha conclui · toque vê detalhes · segure edita';
   renderGrupos();
 
   let lista = todas.slice().sort(ordenar);
@@ -481,8 +481,33 @@ listaEl.addEventListener('contextmenu', e => e.preventDefault());
 listaEl.addEventListener('click', e => {
   if (pressAbriu) { pressAbriu = false; return; }
   const item = e.target.closest('.item'); if (!item) return;
-  const t = estado.tarefas.find(x => x.id === item.dataset.id); if (t) marcar(t);
+  const t = estado.tarefas.find(x => x.id === item.dataset.id); if (!t) return;
+  if (e.target.closest('.check')) marcar(t);   // bolinha = concluir
+  else abrirInfo(t);                             // resto do cartão = quem já concluiu
 });
+
+/* ============ DETALHES (toque) ============ */
+let infoTarefa = null;
+function abrirInfo(t) {
+  const l = listaAtual(); infoTarefa = t;
+  const ms = membrosDaLista(l.id);
+  const nomeDe = m => m.user_id === usuario.id ? 'Você' : (m.nome || m.email);
+  const autor = ms.find(m => m.user_id === t.criado_por);
+  const linhas = [];
+  if (t.grupo) linhas.push(`<div class="linha">🗂️ ${esc(t.grupo)}</div>`);
+  if (t.prazo && l.usar_prazo) linhas.push(`<div class="linha">📅 ${t.prazo === hoje() ? 'hoje' : fmtData(t.prazo)}</div>`);
+  if (t.prio) linhas.push(`<div class="linha">${t.prio === 2 ? '🔴 urgente' : '🟡 importante'}</div>`);
+  if (t.nota) linhas.push(`<div class="linha">📝 ${esc(t.nota)}</div>`);
+  if (l.compartilhada && autor) linhas.push(`<div class="linha">Criada por ${esc(nomeDe(autor))}</div>`);
+  const pessoas = l.compartilhada ? ms : ms.filter(m => m.user_id === usuario.id);
+  linhas.push(pessoas.map(m => { const ok = !!estado.checks[t.id]?.[m.user_id]?.feito;
+    return `<div class="quem-linha ${ok ? '' : 'nao'}"><span class="check ${ok ? 'on' : ''}">${ok ? '✓' : ''}</span><span>${esc(nomeDe(m))}</span><span class="grow"></span><span class="linha">${ok ? 'concluiu' : 'pendente'}</span></div>`; }).join(''));
+  $('#infoTitulo').textContent = t.texto;
+  $('#infoCorpo').innerHTML = linhas.join('');
+  sheet('info', true);
+}
+$('#infoFechar').onclick = () => sheet('info', false);
+$('#infoEditar').onclick = () => { sheet('info', false); if (infoTarefa) abrirEditor(infoTarefa); };
 
 /* ============ EDITOR ============ */
 let editando = null;
@@ -494,8 +519,14 @@ function abrirEditor(t) {
   $('#edCampoGrupo').classList.toggle('hidden', !l.grupos.length);
   $('#edGrupo').innerHTML = '<option value="">Sem grupo</option>' + l.grupos.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('');
   $('#edGrupo').value = l.grupos.includes(t.grupo) ? t.grupo : '';
-  const autor = membrosDaLista(l.id).find(m => m.user_id === t.criado_por);
-  $('#edQuem').textContent = l.compartilhada && autor ? `Criada por ${autor.user_id === usuario.id ? 'você' : (autor.nome || autor.email)}` : '';
+  const ms = membrosDaLista(l.id);
+  const nomeDe = m => m.user_id === usuario.id ? 'você' : (m.nome || m.email);
+  const autor = ms.find(m => m.user_id === t.criado_por);
+  const fizeram = ms.filter(m => estado.checks[t.id]?.[m.user_id]?.feito);
+  const partes = [];
+  if (l.compartilhada && autor) partes.push(`Criada por ${nomeDe(autor)}`);
+  if (l.compartilhada) partes.push(fizeram.length ? `✓ Concluída por: ${fizeram.map(nomeDe).join(', ')}` : 'Ninguém concluiu ainda');
+  $('#edQuem').innerHTML = partes.map(esc).join('<br>');
   sheet('edit', true);
 }
 function fecharEditor() { editando = null; sheet('edit', false); }
