@@ -25,7 +25,7 @@ let estado = null;    // cache por usuário
 let CHAVE = '';
 
 function estadoInicial() {
-  return { listas: [], membros: {}, tarefas: [], checks: {}, listaAtual: '', filtro: 'pendentes', extras: true, grupoAtual: '', fila: [] };
+  return { listas: [], membros: {}, tarefas: [], checks: {}, listaAtual: '', filtro: 'todas', extras: true, grupoAtual: '', fila: [] };
 }
 function carregar() {
   try { const e = JSON.parse(localStorage.getItem(CHAVE)); return e ? Object.assign(estadoInicial(), e) : estadoInicial(); }

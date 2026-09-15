@@ -179,6 +179,7 @@ main{max-width:640px;margin:0 auto;padding:14px 14px 8px}
 .extras .resumo{margin-bottom:10px}
 
 .extras .add-extra{margin:0}
+.extras .toolbar{margin:10px 0 0}
 
 /* ---------- toque / segurar ---------- */
 .item:active{background:var(--surface-2)}
