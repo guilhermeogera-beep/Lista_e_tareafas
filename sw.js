@@ -1,11 +1,15 @@
 /* Service worker - app shell offline.
    Troque a versão sempre que publicar mudanças, para o app atualizar nos celulares. */
-const VERSAO = 'listas-v2';
+const VERSAO = 'tarefas-v7';
+
+const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
 
 const ARQUIVOS = [
+  SUPABASE_JS,
   './',
   './index.html',
   './manifest.webmanifest',
+  './config.js',
   './assets/css/style.css',
   './assets/js/app.js',
   './assets/icons/icon-192.png',
@@ -32,6 +36,11 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
+  // biblioteca do Supabase (CDN): cache primeiro, ela não muda
+  if (req.url === SUPABASE_JS) {
+    e.respondWith(caches.match(req).then(hit => hit || fetch(req)));
+    return;
+  }
   if (new URL(req.url).origin !== location.origin) return;
 
   /* Rede primeiro, cache como rede de segurança (mesma lógica do app da pizza):

@@ -1,7 +1,7 @@
 {
-  "name": "Listas — Tarefas e Compras",
-  "short_name": "Listas",
-  "description": "Tarefas e listas de compras, offline, no celular.",
+  "name": "Tarefas",
+  "short_name": "Tarefas",
+  "description": "Lista de tarefas compartilhada, offline, no celular.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
