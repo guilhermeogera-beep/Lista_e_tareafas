@@ -47,7 +47,7 @@ function toast(msg, desfazer) {
   t.classList.remove('hidden');
   if (desfazer) $('#toastUndo').onclick = () => { desfazer(); t.classList.add('hidden'); };
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.add('hidden'), desfazer ? 5000 : 2500);
+  toastTimer = setTimeout(() => t.classList.add('hidden'), desfazer ? 2000 : 2500);
 }
 function statusSync(txt, erro) {
   const el = $('#syncStatus');
@@ -510,14 +510,14 @@ $('#formEditar').onsubmit = e => {
 };
 $('#edApagar').onclick = () => { if (!editando) return; const t = editando; fecharEditor(); apagarTarefa(t); };
 
-$('#mnLimparConcluidas').onclick = () => {
+$('#mnDesmarcarTodas').onclick = () => {
   sheet('menu', false);
-  const l = listaAtual();
+  // só desmarca os SEUS checks; as tarefas continuam na lista para reutilizar
   const feitas = tarefasDaLista().filter(t => meuCheck(t));
-  if (!feitas.length) return toast('Nenhuma tarefa concluída');
-  if (!confirm(`Apagar ${feitas.length} tarefa(s) que você concluiu?${l.compartilhada ? ' Elas somem para todo mundo da lista.' : ''}`)) return;
-  feitas.forEach(t => { t.apagado = true; t.atualizado = agora(); enfileirar('tarefas', t); });
-  toast(`${feitas.length} tarefa(s) apagada(s)`, () => feitas.forEach(t => { t.apagado = false; t.atualizado = agora(); enfileirar('tarefas', t); }));
+  if (!feitas.length) return toast('Nenhuma tarefa marcada');
+  if (!confirm(`Desmarcar ${feitas.length} tarefa(s)? Elas continuam na lista, só voltam a ficar pendentes para você.`)) return;
+  feitas.forEach(t => marcar(t));
+  toast(`${feitas.length} tarefa(s) desmarcada(s)`);
 };
 
 /* ============ GRUPOS ============ */
