@@ -4,6 +4,6 @@
      - anon public (API key) -> anonKey
    Deixe os dois vazios para o app funcionar só neste aparelho, sem sincronizar. */
 window.SUPABASE_CONFIG = {
-  url: '',
-  anonKey: ''
+  url: 'https://fklieiwcpthugvzlfxro.supabase.co',
+  anonKey: 'sb_publishable_1T8I4ReQJamm1dyGaWIQBQ_EKEMVoKN'
 };

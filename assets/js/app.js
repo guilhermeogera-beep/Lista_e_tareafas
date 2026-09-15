@@ -450,7 +450,7 @@ if (sb) {
   const limite = Date.now() - 30 * 86400000;
   estado.tarefas = estado.tarefas.filter(t => !(t.apagado && t.enviado && t.atualizado < limite));
 } else {
-  statusSync('só neste aparelho');
+  statusSync(!(cfg.url && cfg.anonKey) ? 'só neste aparelho' : 'sem a biblioteca de sync', !!(cfg.url && cfg.anonKey));
 }
 
 render();
