@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tarefas</title>
-<meta name="description" content="Lista de tarefas compartilhada, offline, no celular.">
+<meta name="description" content="Listas de tarefas privadas e compartilhadas, com check por pessoa.">
 <meta name="theme-color" content="#0f1419">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./assets/icons/icon-192.png">
@@ -19,62 +19,129 @@
 
 <header class="topbar">
   <div class="topbar-in">
-    <h1>Tarefas</h1>
+    <button class="icon-btn hidden" id="btnVoltar" aria-label="Voltar">‹</button>
+    <h1 id="titulo">Tarefas</h1>
     <span class="sync" id="syncStatus" hidden></span>
-    <button class="icon-btn" id="btnMenu" aria-label="Mais opções" title="Mais opções">⋯</button>
+    <button class="icon-btn hidden" id="btnMenu" aria-label="Mais opções" title="Mais opções">⋯</button>
   </div>
 </header>
 
 <main id="main">
-  <form class="add-row" id="formTarefa" autocomplete="off">
-    <input type="text" id="inpTarefa" placeholder="Nova tarefa…" aria-label="Nova tarefa" maxlength="120" required>
-    <button type="submit" class="btn primary" aria-label="Adicionar tarefa">+</button>
-  </form>
 
-  <button type="button" class="extras-toggle" id="btnExtras" aria-expanded="true">Detalhes <span class="arrow">▾</span></button>
-  <div class="extras" id="extras">
-    <div class="resumo" id="resumo"></div>
-    <div class="add-extra">
-      <label class="chip-input" id="campoPrazo">
-        <span>📅</span>
-        <input type="date" id="inpPrazo" aria-label="Prazo">
-      </label>
-      <select id="selPrioridade" aria-label="Prioridade">
-        <option value="0">Normal</option>
-        <option value="1">Importante</option>
-        <option value="2">Urgente</option>
-      </select>
+  <!-- ============ LOGIN ============ -->
+  <section class="view hidden" id="view-auth">
+    <div class="auth-card">
+      <div class="auth-logo">✅</div>
+      <h2 id="authTitulo">Entrar</h2>
+      <form id="formAuth" autocomplete="on">
+        <div class="field"><label for="authEmail">E-mail</label><input type="email" id="authEmail" autocomplete="email" required></div>
+        <div class="field"><label for="authSenha">Senha</label><input type="password" id="authSenha" autocomplete="current-password" minlength="6" required></div>
+        <div class="field hidden" id="authCampoNome"><label for="authNome">Seu nome</label><input type="text" id="authNome" maxlength="40" autocomplete="name"></div>
+        <p class="auth-erro hidden" id="authErro"></p>
+        <button type="submit" class="btn primary wide" id="authBotao">Entrar</button>
+      </form>
+      <button class="btn ghost wide" id="authTrocar">Não tem conta? Criar cadastro</button>
     </div>
-  </div>
+  </section>
 
-  <div class="toolbar">
-    <div class="seg" id="filtro" role="tablist">
-      <button data-filtro="pendentes" class="on">Pendentes</button>
-      <button data-filtro="todas">Todas</button>
-      <button data-filtro="concluidas">Concluídas</button>
+  <!-- ============ LISTAS ============ -->
+  <section class="view hidden" id="view-listas">
+    <div id="listaListas" class="lista"></div>
+    <button class="btn primary wide big" id="btnNovaLista">+ Nova lista</button>
+    <button class="btn ghost wide" id="btnEntrarCodigo">Tenho um código de convite</button>
+  </section>
+
+  <!-- ============ LISTA (tarefas) ============ -->
+  <section class="view hidden" id="view-lista">
+    <form class="add-row" id="formTarefa" autocomplete="off">
+      <input type="text" id="inpTarefa" placeholder="Nova tarefa…" aria-label="Nova tarefa" maxlength="120" required>
+      <button type="submit" class="btn primary" aria-label="Adicionar tarefa">+</button>
+    </form>
+
+    <button type="button" class="extras-toggle" id="btnExtras" aria-expanded="true">Detalhes <span class="arrow">▾</span></button>
+    <div class="extras" id="extras">
+      <div class="resumo" id="resumo"></div>
+      <div class="add-extra">
+        <label class="chip-input" id="campoPrazo">
+          <span>📅</span>
+          <input type="date" id="inpPrazo" aria-label="Prazo">
+        </label>
+        <select id="selPrioridade" aria-label="Prioridade">
+          <option value="0">Normal</option>
+          <option value="1">Importante</option>
+          <option value="2">Urgente</option>
+        </select>
+      </div>
     </div>
-  </div>
 
-  <div class="grupos" id="barraGrupos"></div>
-  <p class="hint" id="dica"></p>
-  <div id="lista" class="lista"></div>
+    <div class="toolbar">
+      <div class="seg" id="filtro" role="tablist">
+        <button data-filtro="pendentes" class="on">Pendentes</button>
+        <button data-filtro="todas">Todas</button>
+        <button data-filtro="concluidas">Concluídas</button>
+      </div>
+      <button class="btn ghost" id="btnCompartilhar">👥 Compartilhar</button>
+    </div>
+
+    <div class="grupos" id="barraGrupos"></div>
+    <p class="hint" id="dica">Toque para concluir · segure para editar</p>
+    <div id="lista" class="lista"></div>
+  </section>
+
 </main>
 
-<!-- ============ MENU ============ -->
-<div class="sheet-bg hidden" id="menuBg"></div>
-<div class="sheet hidden" id="menu" role="dialog" aria-label="Opções">
+<!-- ============ MENU DA TELA DE LISTAS ============ -->
+<div class="sheet-bg hidden" id="menuListasBg"></div>
+<div class="sheet hidden" id="menuListas" role="dialog" aria-label="Opções">
+  <p class="hint" id="menuUsuario"></p>
   <button class="sheet-item" id="mnInstalar" hidden>📲 Instalar no celular</button>
-  <button class="sheet-item" id="mnPrazo">📅 Usar prazo nas tarefas <span class="switch" id="swPrazo"></span></button>
-  <button class="sheet-item" id="mnDois">👥 Duas bolinhas por tarefa <span class="switch" id="swDois"></span></button>
+  <button class="sheet-item" id="mnSair">🚪 Sair da conta</button>
   <hr>
+  <button class="sheet-item" id="menuListasFechar">Fechar</button>
+</div>
+
+<!-- ============ MENU DA LISTA ============ -->
+<div class="sheet-bg hidden" id="menuBg"></div>
+<div class="sheet hidden" id="menu" role="dialog" aria-label="Opções da lista">
+  <button class="sheet-item" id="mnPrazo">📅 Usar prazo nas tarefas <span class="switch" id="swPrazo"></span></button>
   <button class="sheet-item" id="mnGrupos">🗂️ Grupos…</button>
   <hr>
-  <button class="sheet-item danger" id="mnLimparConcluidas">🧹 Apagar tarefas concluídas</button>
+  <button class="sheet-item" id="mnMembros">👥 Pessoas da lista…</button>
+  <button class="sheet-item" id="mnRenomear">✏️ Renomear lista</button>
   <hr>
-  <button class="sheet-item" id="mnExportar">💾 Exportar backup</button>
-  <label class="sheet-item">📂 Importar backup <input type="file" id="inpImportar" accept="application/json" hidden></label>
+  <button class="sheet-item danger" id="mnLimparConcluidas">🧹 Apagar tarefas concluídas</button>
+  <button class="sheet-item danger" id="mnApagarLista">🗑️ Apagar lista</button>
+  <button class="sheet-item danger" id="mnSairLista">🚪 Sair desta lista</button>
   <hr>
   <button class="sheet-item" id="mnFechar">Fechar</button>
+</div>
+
+<!-- ============ NOVA LISTA ============ -->
+<div class="sheet-bg hidden" id="novaListaBg"></div>
+<div class="sheet hidden" id="novaLista" role="dialog" aria-label="Nova lista">
+  <form id="formNovaLista" autocomplete="off">
+    <h2 class="sheet-title">Nova lista</h2>
+    <div class="field"><label for="nlNome">Nome</label><input type="text" id="nlNome" maxlength="40" placeholder="ex: Casa, Viagem, Mercado" required></div>
+    <div class="tipo-lista">
+      <label class="tipo"><input type="radio" name="nlTipo" value="privada" checked><span><b>🔒 Privada</b><small>Só você vê</small></span></label>
+      <label class="tipo"><input type="radio" name="nlTipo" value="compartilhada"><span><b>👥 Compartilhada</b><small>Convide pessoas pelo e-mail; cada uma tem seu check</small></span></label>
+    </div>
+    <div class="sheet-actions"><span class="grow"></span><button type="button" class="btn ghost" id="nlCancelar">Cancelar</button><button type="submit" class="btn primary">Criar</button></div>
+  </form>
+</div>
+
+<!-- ============ PESSOAS DA LISTA ============ -->
+<div class="sheet-bg hidden" id="membrosBg"></div>
+<div class="sheet hidden" id="membros" role="dialog" aria-label="Pessoas da lista">
+  <h2 class="sheet-title">Pessoas da lista</h2>
+  <div class="convite hidden" id="conviteBox"><span>Código: <b id="conviteCodigo"></b></span><button type="button" class="btn ghost" id="btnLinkConvite">Enviar link</button></div>
+  <div id="listaMembros" class="lista"></div>
+  <form class="add-row" id="formConvite" autocomplete="off">
+    <input type="email" id="inpConvite" placeholder="E-mail de quem vai entrar" required>
+    <button type="submit" class="btn primary" aria-label="Convidar">+</button>
+  </form>
+  <p class="hint" id="membrosDica"></p>
+  <div class="sheet-actions"><span class="grow"></span><button type="button" class="btn ghost" id="membrosFechar">Fechar</button></div>
 </div>
 
 <!-- ============ GRUPOS ============ -->
@@ -89,7 +156,7 @@
   <div class="sheet-actions"><span class="grow"></span><button type="button" class="btn ghost" id="gruposFechar">Fechar</button></div>
 </div>
 
-<!-- ============ EDITAR ============ -->
+<!-- ============ EDITAR TAREFA ============ -->
 <div class="sheet-bg hidden" id="editBg"></div>
 <div class="sheet hidden" id="edit" role="dialog" aria-label="Editar tarefa">
   <form id="formEditar">
@@ -100,6 +167,7 @@
     </div>
     <div class="field" id="edCampoGrupo"><label for="edGrupo">Grupo</label><select id="edGrupo"></select></div>
     <div class="field"><label for="edNota">Observação</label><input type="text" id="edNota" maxlength="200" placeholder="opcional"></div>
+    <p class="hint" id="edQuem"></p>
     <div class="sheet-actions">
       <button type="button" class="btn danger" id="edApagar">Apagar</button>
       <span class="grow"></span>

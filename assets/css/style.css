@@ -225,3 +225,34 @@ main{max-width:640px;margin:0 auto;padding:14px 14px 8px}
 .grupo-linha .n{font-size:12px;color:var(--muted)}
 .grupo-linha button{background:none;border:0;color:var(--muted);font-size:18px;padding:4px 6px}
 .sheet .add-row{margin-top:12px}
+
+/* ---------- login ---------- */
+.auth-card{max-width:380px;margin:40px auto 0;text-align:center}
+.auth-logo{font-size:48px;margin-bottom:8px}
+.auth-card h2{margin-bottom:16px}
+.auth-card .field{text-align:left;margin:10px 0}
+.auth-card .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+.auth-card .field input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 12px;outline:none}
+.auth-card .field input:focus{border-color:var(--accent)}
+.auth-erro{color:var(--red);font-size:14px;margin:6px 0}
+.btn.wide{width:100%;margin-top:8px}
+.btn.primary.wide{font-size:16px;padding:12px}
+.btn.big{padding:14px;font-size:16px;margin-top:14px}
+
+/* ---------- cartões de lista ---------- */
+.lista-card .ico{font-size:22px;flex:0 0 auto}
+.lista-card .seta{color:var(--muted);font-size:22px}
+.item .meta .quem{margin-left:auto}
+.item .meta .quem.todos{color:var(--accent)}
+
+/* ---------- tipo de lista (nova lista) ---------- */
+.tipo-lista{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.tipo{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+.tipo:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.tipo input{accent-color:var(--accent)}
+.tipo span{display:flex;flex-direction:column}
+.tipo small{color:var(--muted);font-size:12px}
+.topbar h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.convite{display:flex;align-items:center;gap:8px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:8px 8px 8px 12px;margin-bottom:10px;font-size:14px}
+.convite b{letter-spacing:.12em;font-family:ui-monospace,Menlo,Consolas,monospace}
+.convite .btn{margin-left:auto;color:var(--accent)}

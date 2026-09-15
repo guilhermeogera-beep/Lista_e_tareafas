@@ -5,42 +5,28 @@ e sincroniza entre os aparelhos pelo Supabase.
 
 ## Como usar
 
-- **Toque** no cartão da tarefa: marca / desmarca como concluída.
-- **Duas bolinhas por tarefa** (menu ⋯): cada pessoa marca a sua (azul e verde); a tarefa só
-  conclui quando as duas estão marcadas. Bom para coisas que os dois precisam fazer.
-- **Segure** o cartão (~meio segundo): abre o editor (texto, prioridade, prazo, observação, apagar).
-- **Grupos** (menu ⋯ → Grupos…): crie grupos como Casa, Mercado, Viagem. Os chips acima da lista
-  filtram por grupo e a tarefa nova entra no grupo selecionado; no editor dá para trocar. Apagar um
-  grupo não apaga as tarefas dele (ficam sem grupo).
-- **Detalhes ▾**: mostra/oculta os contadores e os campos de prioridade e prazo.
-- **Menu ⋯**: ligar/desligar prazo e duas bolinhas, apagar concluídas (pede confirmação, dá para desfazer),
-  exportar/importar backup, instalar no celular. As configurações (prazo, duas bolinhas, grupos,
-  detalhes abertos) sincronizam entre os aparelhos; só o filtro da lista fica local.
+- **Login**: cada pessoa cria seu cadastro (e-mail + senha) na primeira tela.
+- **Listas**: crie quantas quiser, **privadas** (só você) ou **compartilhadas**.
+- **Compartilhar**: botão 👥 Compartilhar dentro da lista. Gera um link/código de convite para
+  mandar no WhatsApp; quem abrir e entrar na conta já cai na lista. Também dá para adicionar pelo
+  e-mail em *Pessoas da lista* (menu ⋯). Uma lista privada vira compartilhada ao clicar em Compartilhar.
+- **Check por pessoa**: em lista compartilhada, cada membro marca o seu check. O cartão mostra
+  quantos já fizeram (ex.: 👥 1/3).
+- **Toque** no cartão marca/desmarca; **segure** (~meio segundo) abre o editor.
+- **Grupos**, **prazo**, **prioridade**, **observação** — por lista, no menu ⋯.
+- Funciona offline: o que você fizer sem internet sobe quando reconectar.
 
-## Sincronização (Supabase)
+## Supabase
 
-Sem login: todo aparelho configurado com a mesma URL + chave vê a mesma lista. Serve para uso
-em casa; não guarde nada sensível.
+1. Crie um projeto em supabase.com.
+2. *SQL Editor → New query*: cole [`supabase/schema.sql`](supabase/schema.sql) inteiro e rode
+   (pode repetir; ele é idempotente). **Atenção**: ele apaga as tabelas da versão antiga sem login.
+3. *Authentication → Providers → Email*: se não quiser exigir confirmação por e-mail, desligue
+   **Confirm email**. (Com ele ligado, o cadastro só entra depois de clicar no link do e-mail.)
+4. *Project Settings → API*: copie a URL e a chave `anon`/`publishable` para [`config.js`](config.js).
 
-1. Crie um projeto em [supabase.com](https://supabase.com).
-2. Abra *SQL Editor → New query*, cole o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) e rode.
-3. Em *Project Settings → API* copie a **Project URL** e a chave **anon public**.
-4. Cole as duas em [`config.js`](config.js):
-
-```js
-window.SUPABASE_CONFIG = {
-  url: 'https://xxxxxxxx.supabase.co',
-  anonKey: 'eyJ...'
-};
-```
-
-5. Publique. Cada celular que abrir o app já sincroniza (o cabeçalho mostra "salvando…" ou
-   "sem conexão"; sem `config.js` preenchido mostra "só neste aparelho").
-
-Como funciona: cada tarefa tem um `atualizado` (timestamp). Ao salvar, o app envia as alteradas;
-ao abrir, voltar para a tela ou reconectar, baixa tudo e a versão mais recente vence. Mudanças
-do outro celular chegam na hora via Realtime. Apagar marca `apagado = true` (assim a remoção
-chega no outro aparelho); tumbas com mais de 30 dias são limpas do celular.
+Segurança: tudo passa por RLS — cada pessoa só lê e edita listas de que é membro; o check é
+só o próprio; só o dono apaga a lista ou remove pessoas.
 
 ## Estrutura
 
@@ -61,7 +47,7 @@ assets/icons/           ícones 192 / 512 / maskable
 2. Em *Settings → Pages*, escolha a branch `main` e a pasta `/ (root)`.
 3. Abra a URL no celular e use "Adicionar à tela inicial".
 
-Sempre que publicar uma mudança, **suba o `VERSAO` em `sw.js`** (`tarefas-v4` → `tarefas-v5`),
+Sempre que publicar uma mudança, **suba o `VERSAO` em `sw.js`** (`tarefas-v9` → `tarefas-v10`),
 senão os celulares que já instalaram continuam servindo os arquivos antigos do cache.
 
 ## Rodar localmente

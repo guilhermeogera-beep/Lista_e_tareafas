@@ -1,6 +1,6 @@
 /* Service worker - app shell offline.
    Troque a versão sempre que publicar mudanças, para o app atualizar nos celulares. */
-const VERSAO = 'tarefas-v8';
+const VERSAO = 'tarefas-v9';
 
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
 
