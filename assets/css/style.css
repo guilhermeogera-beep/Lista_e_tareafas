@@ -149,7 +149,7 @@ main{max-width:640px;margin:0 auto;padding:14px 14px 8px}
 .sheet-item:active{background:var(--surface)}
 .sheet-item.danger{color:var(--red)}
 .sheet .field{margin:10px 0}
-.sheet .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+.sheet .field > label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
 .sheet .field input,.sheet .field select{
   width:100%;background:var(--surface);border:1px solid var(--line);
   border-radius:10px;padding:11px 12px;outline:none;
@@ -318,3 +318,29 @@ html[data-theme="light"] .toast{box-shadow:0 8px 24px rgba(0,0,0,.15)}
 
 /* ---------- tipo "um só" ---------- */
 .item .meta .umso{color:var(--gold)}
+
+/* ---------- × de fechar nas folhas ---------- */
+.sheet{padding-top:14px}
+.sheet-x{
+  position:absolute;top:8px;right:10px;z-index:1;
+  width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
+  background:var(--surface);color:var(--muted);font-size:18px;line-height:1;cursor:pointer;
+}
+.sheet-x:active{background:var(--surface-2)}
+.sheet .sheet-title,.sheet form > .sheet-title{padding-right:40px}
+.sheet > .hint:first-of-type{padding-right:40px}
+
+/* ---------- folhas roláveis + chips de grupo com seleção clara ---------- */
+.sheet{max-height:88vh;overflow-y:auto;overscroll-behavior:contain}
+.opcoes-grupo button{position:relative;padding-left:14px}
+.opcoes-grupo button.on{
+  background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700;
+}
+.opcoes-grupo button.on::before{content:"✓ ";font-weight:900}
+.opcoes-grupo button.sem.on{background:var(--surface-2);color:var(--text);border-color:var(--muted)}
+#novaTarefa .tipo-lista{margin:6px 0 0}
+#novaTarefa .tipo{padding:8px 12px}
+#novaTarefa .field{margin:12px 0}
+#novaTarefa .sheet-title{font-size:18px;margin-bottom:4px}
+#ntTodos button{padding:9px 8px;font-size:14px}
+#ntTodosDica{margin:6px 0 0 2px}

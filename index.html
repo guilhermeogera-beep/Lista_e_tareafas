@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Tarefas">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="./assets/css/style.css?v=21">
+<link rel="stylesheet" href="./assets/css/style.css?v=23">
 </head>
 <body>
 
@@ -141,10 +141,8 @@
     <h2 class="sheet-title" id="ntTitulo"></h2>
     <div class="field" id="ntCampoGrupo"><label>Grupo</label><div class="opcoes-grupo" id="ntGrupos"></div></div>
     <div class="field" id="ntCampoTodos"><label>Quem precisa fazer</label>
-      <div class="tipo-lista">
-        <label class="tipo"><input type="radio" name="ntTodos" value="1" checked><span><b>👥 Todos</b><small>Cada pessoa marca o seu check</small></span></label>
-        <label class="tipo"><input type="radio" name="ntTodos" value="0"><span><b>👤 Um só</b><small>Quem fizer marca, e fica feita para todo mundo</small></span></label>
-      </div>
+      <div class="seg" id="ntTodos"><button type="button" data-todos="1" class="on">👥 Todos</button><button type="button" data-todos="0">👤 Um só</button></div>
+      <p class="hint" id="ntTodosDica">Cada pessoa marca o seu check</p>
     </div>
     <div class="field"><label for="ntPrio">Prioridade</label>
       <select id="ntPrio"><option value="0">Normal</option><option value="1">Importante</option><option value="2">Urgente</option></select>
@@ -204,9 +202,9 @@
 
 <div class="toast hidden" id="toast"></div>
 
-<script src="./config.js?v=21"></script>
+<script src="./config.js?v=23"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="./assets/js/sugestoes.js?v=21"></script>
-<script src="./assets/js/app.js?v=21"></script>
+<script src="./assets/js/sugestoes.js?v=23"></script>
+<script src="./assets/js/app.js?v=23"></script>
 </body>
 </html>

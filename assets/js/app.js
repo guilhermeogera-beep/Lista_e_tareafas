@@ -61,6 +61,12 @@ function statusSync(txt, erro) {
   el.hidden = !txt; el.textContent = txt || ''; el.classList.toggle('err', !!erro);
 }
 function sheet(id, abrir) { $('#' + id).classList.toggle('hidden', !abrir); $('#' + id + 'Bg').classList.toggle('hidden', !abrir); }
+// × de fechar em todas as folhas
+document.querySelectorAll('.sheet').forEach(s => {
+  const x = document.createElement('button'); x.type = 'button'; x.className = 'sheet-x'; x.setAttribute('aria-label', 'Fechar'); x.textContent = '×';
+  x.onclick = () => sheet(s.id, false);
+  s.prepend(x);
+});
 document.querySelectorAll('.sheet-bg').forEach(bg => bg.onclick = () => bg.classList.add('hidden') || bg.nextElementSibling.classList.add('hidden'));
 
 let view = 'auth';
@@ -389,7 +395,7 @@ $('#formTarefa').onsubmit = e => {
   $('#ntGrupos').innerHTML = l.grupos.map(g => `<button type="button" data-grupo="${esc(g)}" class="${estado.grupoAtual === g ? 'on' : ''}">${esc(g)}</button>`).join('') +
     `<button type="button" class="sem ${estado.grupoAtual ? '' : 'on'}" data-grupo="">Sem grupo</button>`;
   $('#ntCampoTodos').classList.toggle('hidden', !l.compartilhada);
-  $('input[name=ntTodos][value="1"]').checked = true;
+  setNtTodos('1');
   $('#ntPrio').value = '0'; $('#ntNota').value = ''; $('#ntPrazo').value = '';
   $('#ntCampoPrazo').classList.toggle('hidden', !l.usar_prazo);
   sheet('novaTarefa', true);
@@ -398,6 +404,13 @@ $('#ntGrupos').onclick = e => {
   const b = e.target.closest('[data-grupo]'); if (!b) return;
   document.querySelectorAll('#ntGrupos button').forEach(x => x.classList.toggle('on', x === b));
 };
+let ntTodosValor = '1';
+function setNtTodos(v) {
+  ntTodosValor = v;
+  document.querySelectorAll('#ntTodos button').forEach(b => b.classList.toggle('on', b.dataset.todos === v));
+  $('#ntTodosDica').textContent = v === '1' ? 'Cada pessoa marca o seu check' : 'Quem fizer marca, e fica feita para todo mundo';
+}
+$('#ntTodos').onclick = e => { const b = e.target.closest('[data-todos]'); if (b) setNtTodos(b.dataset.todos); };
 $('#ntCancelar').onclick = () => sheet('novaTarefa', false);
 $('#formNovaTarefa').onsubmit = e => {
   e.preventDefault();
@@ -405,7 +418,7 @@ $('#formNovaTarefa').onsubmit = e => {
   const l = listaAtual();
   const grupo = $('#ntGrupos button.on')?.dataset.grupo || '';
   const t = { id: uid(), lista_id: l.id, texto: capitalizar(texto), prazo: l.usar_prazo ? ($('#ntPrazo').value || '') : '', prio: +$('#ntPrio').value || 0,
-              nota: $('#ntNota').value.trim(), grupo, todos: !l.compartilhada || $('input[name=ntTodos]:checked').value === '1',
+              nota: $('#ntNota').value.trim(), grupo, todos: !l.compartilhada || ntTodosValor === '1',
               criado_por: usuario.id, criado: agora(), atualizado: agora(), apagado: false };
   estado.tarefas.unshift(t);
   // entra no topo da ordem manual, se houver
