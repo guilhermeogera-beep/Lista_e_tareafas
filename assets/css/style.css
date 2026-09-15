@@ -255,4 +255,18 @@ main{max-width:640px;margin:0 auto;padding:14px 14px 8px}
 .topbar h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .convite{display:flex;align-items:center;gap:8px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:8px 8px 8px 12px;margin-bottom:10px;font-size:14px}
 .convite b{letter-spacing:.12em;font-family:ui-monospace,Menlo,Consolas,monospace}
-.convite .btn{margin-left:auto;color:var(--accent)}
+.convite .btn{color:var(--accent);padding:6px 8px}
+.convite .btn:first-of-type{margin-left:auto}
+
+/* ---------- sugestões de grupos ---------- */
+#grupos{max-height:85vh;overflow-y:auto}
+#grupos .sec-title{margin-top:18px}
+#filtroSugestoes{margin-bottom:10px}
+.sugestoes{display:flex;flex-direction:column;gap:6px}
+.sugestao{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 12px;text-align:left;width:100%;color:inherit}
+.sugestao .ico{font-size:20px}
+.sugestao .body{flex:1;min-width:0}
+.sugestao .txt{display:block;font-weight:600}
+.sugestao .n{font-size:12px;color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sugestao .add{color:var(--accent);font-weight:700;font-size:14px;flex:0 0 auto}
+.sugestao.ja{opacity:.5}

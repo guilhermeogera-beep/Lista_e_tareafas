@@ -1,6 +1,6 @@
 /* Service worker - app shell offline.
    Troque a versão sempre que publicar mudanças, para o app atualizar nos celulares. */
-const VERSAO = 'tarefas-v9';
+const VERSAO = 'tarefas-v13';
 
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
 
@@ -11,6 +11,7 @@ const ARQUIVOS = [
   './manifest.webmanifest',
   './config.js',
   './assets/css/style.css',
+  './assets/js/sugestoes.js',
   './assets/js/app.js',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',

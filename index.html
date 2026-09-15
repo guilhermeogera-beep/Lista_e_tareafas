@@ -80,7 +80,6 @@
         <button data-filtro="todas">Todas</button>
         <button data-filtro="concluidas">Concluídas</button>
       </div>
-      <button class="btn ghost" id="btnCompartilhar">👥 Compartilhar</button>
     </div>
 
     <div class="grupos" id="barraGrupos"></div>
@@ -106,7 +105,7 @@
   <button class="sheet-item" id="mnPrazo">📅 Usar prazo nas tarefas <span class="switch" id="swPrazo"></span></button>
   <button class="sheet-item" id="mnGrupos">🗂️ Grupos…</button>
   <hr>
-  <button class="sheet-item" id="mnMembros">👥 Pessoas da lista…</button>
+  <button class="sheet-item" id="mnMembros">👥 Compartilhar / pessoas da lista…</button>
   <button class="sheet-item" id="mnRenomear">✏️ Renomear lista</button>
   <hr>
   <button class="sheet-item danger" id="mnLimparConcluidas">🧹 Apagar tarefas concluídas</button>
@@ -134,7 +133,7 @@
 <div class="sheet-bg hidden" id="membrosBg"></div>
 <div class="sheet hidden" id="membros" role="dialog" aria-label="Pessoas da lista">
   <h2 class="sheet-title">Pessoas da lista</h2>
-  <div class="convite hidden" id="conviteBox"><span>Código: <b id="conviteCodigo"></b></span><button type="button" class="btn ghost" id="btnLinkConvite">Enviar link</button></div>
+  <div class="convite hidden" id="conviteBox"><span>Código: <b id="conviteCodigo"></b></span><button type="button" class="btn ghost" id="btnCopiarCodigo">Copiar</button><button type="button" class="btn ghost" id="btnLinkConvite">Enviar</button></div>
   <div id="listaMembros" class="lista"></div>
   <form class="add-row" id="formConvite" autocomplete="off">
     <input type="email" id="inpConvite" placeholder="E-mail de quem vai entrar" required>
@@ -142,6 +141,14 @@
   </form>
   <p class="hint" id="membrosDica"></p>
   <div class="sheet-actions"><span class="grow"></span><button type="button" class="btn ghost" id="membrosFechar">Fechar</button></div>
+</div>
+
+<!-- ============ ESCOLHER GRUPO (ao adicionar) ============ -->
+<div class="sheet-bg hidden" id="escolherGrupoBg"></div>
+<div class="sheet hidden" id="escolherGrupo" role="dialog" aria-label="Escolher grupo">
+  <h2 class="sheet-title">Em qual grupo?</h2>
+  <p class="hint" id="escolherGrupoTexto"></p>
+  <div class="opcoes-grupo" id="opcoesGrupo"></div>
 </div>
 
 <!-- ============ GRUPOS ============ -->
@@ -153,6 +160,9 @@
     <input type="text" id="inpGrupo" placeholder="Novo grupo… (ex: Casa, Mercado)" maxlength="30" required>
     <button type="submit" class="btn primary" aria-label="Criar grupo">+</button>
   </form>
+  <h3 class="sec-title">Sugestões prontas</h3>
+  <div class="seg" id="filtroSugestoes"><button data-tag="viagem" class="on">✈️ Viagem</button><button data-tag="camping">⛺ Camping</button><button data-tag="casa">🏠 Casa</button></div>
+  <div class="sugestoes" id="listaSugestoes"></div>
   <div class="sheet-actions"><span class="grow"></span><button type="button" class="btn ghost" id="gruposFechar">Fechar</button></div>
 </div>
 
@@ -181,6 +191,7 @@
 
 <script src="./config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="./assets/js/sugestoes.js"></script>
 <script src="./assets/js/app.js"></script>
 </body>
 </html>

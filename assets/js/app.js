@@ -160,11 +160,12 @@ async function recarregar() {
 
 /* fila de escrita: upserts que ainda não subiram */
 let enviando = false;
-function enfileirar(tabela, linha) {
+function enfileirar(tabela, linha, soEmpilha) {
   // substitui item igual já na fila (mesma chave), mantendo só a versão mais nova
   const chave = tabela === 'checks' ? f => f.linha.tarefa_id === linha.tarefa_id && f.linha.user_id === linha.user_id : f => f.linha.id === linha.id;
   estado.fila = estado.fila.filter(f => !(f.tabela === tabela && chave(f)));
   estado.fila.push({ tabela, linha });
+  if (soEmpilha) return;
   salvar(); render();
   enviarFila();
 }
@@ -268,19 +269,27 @@ async function compartilharLista() {
   await enviarFila();
   abrirMembros();
 }
-$('#btnCompartilhar').onclick = compartilharLista;
 
 async function enviarLink() {
   const l = listaAtual();
-  const texto = `Entre na minha lista "${l.nome}" no app Tarefas:
-${linkConvite(l)}
-(código ${l.codigo})`;
+  // código sozinho numa linha, para ser fácil de copiar no WhatsApp
+  const texto = `Lista "${l.nome}" no app Tarefas
+
+Código:
+${l.codigo}
+
+Ou abra o link:
+${linkConvite(l)}`;
   try {
     if (navigator.share) await navigator.share({ title: l.nome, text: texto });
     else { await navigator.clipboard.writeText(texto); toast('Link copiado'); }
   } catch {}
 }
 $('#btnLinkConvite').onclick = enviarLink;
+$('#btnCopiarCodigo').onclick = async () => {
+  const l = listaAtual();
+  try { await navigator.clipboard.writeText(l.codigo); toast('Código copiado'); } catch { toast(l.codigo); }
+};
 
 async function entrarPorCodigo(c) {
   const { data, error } = await sb.rpc('entrar_por_codigo', { c });
@@ -291,7 +300,12 @@ async function entrarPorCodigo(c) {
   const l = estado.listas.find(x => x.codigo === c.toUpperCase().trim());
   if (l) { estado.listaAtual = l.id; estado.grupoAtual = ''; salvar(); mostrar('lista'); }
 }
-$('#btnEntrarCodigo').onclick = () => { const c = prompt('Código de convite:'); if (c && c.trim()) entrarPorCodigo(c.trim()); };
+$('#btnEntrarCodigo').onclick = () => {
+  let c = prompt('Código de convite (ou cole o link):') || '';
+  const m = c.match(/convite=([A-Za-z0-9]+)/); if (m) c = m[1];
+  c = c.replace(/[^A-Za-z0-9]/g, '');
+  if (c) entrarPorCodigo(c);
+};
 
 // link ?convite=XXXX: guarda até o login e entra sozinho
 const conviteUrl = new URLSearchParams(location.search).get('convite');
@@ -315,7 +329,7 @@ function renderMembros() {
     : souDono(l) ? 'Mande o link (ou o código) para quem quiser entrar, ou adicione pelo e-mail de quem já tem cadastro.' : 'Compartilhe o link para chamar mais gente.';
 }
 function abrirMembros() { renderMembros(); sheet('membros', true); }
-$('#mnMembros').onclick = () => { sheet('menu', false); abrirMembros(); };
+$('#mnMembros').onclick = () => { sheet('menu', false); compartilharLista(); };
 $('#membrosFechar').onclick = () => sheet('membros', false);
 $('#formConvite').onsubmit = async e => {
   e.preventDefault();
@@ -337,15 +351,33 @@ $('#listaMembros').onclick = async e => {
 /* ============ TAREFAS ============ */
 $('#formTarefa').onsubmit = e => {
   e.preventDefault();
+  const texto = $('#inpTarefa').value.trim(); if (!texto) return;
+  const l = listaAtual();
+  // com grupos na lista e nenhum chip selecionado, pergunta em qual grupo a tarefa entra
+  if (l.grupos.length && !estado.grupoAtual) {
+    $('#escolherGrupoTexto').textContent = `"${capitalizar(texto)}"`;
+    $('#opcoesGrupo').innerHTML = l.grupos.map(g => `<button type="button" data-grupo="${esc(g)}">${esc(g)}</button>`).join('') + '<button type="button" class="sem" data-grupo="">Sem grupo</button>';
+    sheet('escolherGrupo', true);
+    return;
+  }
+  adicionarTarefa(estado.grupoAtual || '');
+};
+$('#opcoesGrupo').onclick = e => {
+  const b = e.target.closest('[data-grupo]'); if (!b) return;
+  sheet('escolherGrupo', false);
+  adicionarTarefa(b.dataset.grupo);
+};
+
+function adicionarTarefa(grupo) {
   const inp = $('#inpTarefa'); const texto = inp.value.trim(); if (!texto) return;
   const l = listaAtual();
   const t = { id: uid(), lista_id: l.id, texto: capitalizar(texto), prazo: l.usar_prazo ? ($('#inpPrazo').value || '') : '', prio: +$('#selPrioridade').value || 0,
-              nota: '', grupo: estado.grupoAtual || '', criado_por: usuario.id, criado: agora(), atualizado: agora(), apagado: false };
+              nota: '', grupo, criado_por: usuario.id, criado: agora(), atualizado: agora(), apagado: false };
   estado.tarefas.unshift(t);
   inp.value = ''; $('#inpPrazo').value = ''; $('#selPrioridade').value = '0';
   if (estado.filtro === 'concluidas') estado.filtro = 'pendentes';
   enfileirar('tarefas', t); inp.focus();
-};
+}
 $('#filtro').onclick = e => { const b = e.target.closest('button'); if (!b) return; estado.filtro = b.dataset.filtro; salvar(); render(); };
 $('#btnExtras').onclick = () => { estado.extras = !estado.extras; salvar(); render(); };
 $('#mnPrazo').onclick = () => atualizarLista({ usar_prazo: !listaAtual().usar_prazo });
@@ -390,7 +422,6 @@ function renderLista() {
   $('#mnApagarLista').classList.toggle('hidden', !souDono(l));
   $('#mnSairLista').classList.toggle('hidden', souDono(l));
   $('#mnMembros').classList.toggle('hidden', !l.compartilhada && !souDono(l));
-  $('#btnCompartilhar').classList.toggle('hidden', !l.compartilhada && !souDono(l));
   $('#dica').textContent = l.compartilhada ? 'Toque para concluir (só o seu check) · segure para editar' : 'Toque para concluir · segure para editar';
   renderGrupos();
 
@@ -506,7 +537,40 @@ function renderListaGrupos() {
         <button data-acao="renomear" aria-label="Renomear">✏️</button><button data-acao="apagar" aria-label="Apagar">🗑️</button></div>`).join('')
     : '<p class="hint">Nenhum grupo ainda. Crie um abaixo.</p>';
 }
-$('#mnGrupos').onclick = () => { sheet('menu', false); renderListaGrupos(); sheet('grupos', true); };
+$('#mnGrupos').onclick = () => { sheet('menu', false); renderListaGrupos(); renderSugestoes(); sheet('grupos', true); };
+
+/* sugestões prontas (assets/js/sugestoes.js): cria o grupo e as tarefas dele */
+let tagSugestao = 'viagem';
+function renderSugestoes() {
+  const l = listaAtual(); const todas = window.SUGESTOES_GRUPOS || [];
+  document.querySelectorAll('#filtroSugestoes button').forEach(b => b.classList.toggle('on', b.dataset.tag === tagSugestao));
+  $('#listaSugestoes').innerHTML = todas.filter(s => s.tags.includes(tagSugestao)).map((s, i) => {
+    const ja = l.grupos.some(g => g.toLowerCase() === s.nome.toLowerCase());
+    return `<button type="button" class="sugestao ${ja ? 'ja' : ''}" data-nome="${esc(s.nome)}">
+      <span class="ico">${s.icone}</span>
+      <span class="body"><span class="txt">${esc(s.nome)}</span><span class="n">${s.itens.length} itens · ${esc(s.itens.slice(0, 4).join(', '))}…</span></span>
+      <span class="add">${ja ? 'já tem' : '+ Adicionar'}</span></button>`;
+  }).join('');
+}
+$('#filtroSugestoes').onclick = e => { const b = e.target.closest('button'); if (!b) return; tagSugestao = b.dataset.tag; renderSugestoes(); };
+$('#listaSugestoes').onclick = e => {
+  const b = e.target.closest('.sugestao'); if (!b) return;
+  const s = (window.SUGESTOES_GRUPOS || []).find(x => x.nome === b.dataset.nome); if (!s) return;
+  const l = listaAtual();
+  const existentes = tarefasDaLista().map(t => t.texto.toLowerCase());
+  const novos = s.itens.filter(i => !existentes.includes(i.toLowerCase()));
+  const jaTem = l.grupos.some(g => g.toLowerCase() === s.nome.toLowerCase());
+  if (!confirm(`${jaTem ? 'Completar' : 'Criar'} o grupo "${s.nome}" com ${novos.length} item(ns)?`)) return;
+  const grupo = l.grupos.find(g => g.toLowerCase() === s.nome.toLowerCase()) || s.nome;
+  if (!jaTem) atualizarLista({ grupos: [...l.grupos, grupo] });
+  const base = agora();
+  novos.forEach((texto, i) => enfileirar('tarefas', { id: uid(), lista_id: l.id, texto, prazo: '', prio: 0, nota: '', grupo, criado_por: usuario.id, criado: base - i, atualizado: base, apagado: false }, true));
+  // enfileirar(..., true) só empilha; agora manda tudo de uma vez
+  estado.tarefas.push(...estado.fila.filter(f => f.tabela === 'tarefas' && !estado.tarefas.some(t => t.id === f.linha.id)).map(f => f.linha));
+  salvar(); render(); enviarFila();
+  toast(`Grupo "${grupo}" com ${novos.length} item(ns)`);
+  renderListaGrupos(); renderSugestoes();
+};
 $('#gruposFechar').onclick = () => sheet('grupos', false);
 $('#formGrupo').onsubmit = e => {
   e.preventDefault();
