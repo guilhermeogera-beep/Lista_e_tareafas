@@ -1,6 +1,6 @@
 /* Service worker - app shell offline.
    Troque a versão sempre que publicar mudanças, para o app atualizar nos celulares. */
-const VERSAO = 'tarefas-v13';
+const VERSAO = 'tarefas-v14';
 
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
 
@@ -9,10 +9,10 @@ const ARQUIVOS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './config.js',
-  './assets/css/style.css',
-  './assets/js/sugestoes.js',
-  './assets/js/app.js',
+  './config.js?v=14',
+  './assets/css/style.css?v=14',
+  './assets/js/sugestoes.js?v=14',
+  './assets/js/app.js?v=14',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
   './assets/icons/maskable-512.png'
@@ -46,8 +46,10 @@ self.addEventListener('fetch', e => {
 
   /* Rede primeiro, cache como rede de segurança (mesma lógica do app da pizza):
      com internet o que está no ar sempre ganha; sem internet, cai para o cache. */
+  // cache: no-store ignora o cache HTTP do navegador (o GitHub Pages manda max-age=600, e sem isso
+  // dava para receber o index.html novo com o app.js velho, ou vice-versa)
   e.respondWith(
-    fetch(req)
+    fetch(req, { cache: 'no-store' })
       .then(res => {
         if (res && res.status === 200 && res.type === 'basic') {
           const copia = res.clone();

@@ -47,7 +47,8 @@ assets/icons/           ícones 192 / 512 / maskable
 2. Em *Settings → Pages*, escolha a branch `main` e a pasta `/ (root)`.
 3. Abra a URL no celular e use "Adicionar à tela inicial".
 
-Sempre que publicar uma mudança, **suba o `VERSAO` em `sw.js`** (`tarefas-v9` → `tarefas-v10`),
+Sempre que publicar uma mudança, **suba o número da versão** nos dois lugares: `VERSAO` em `sw.js`
+(`tarefas-v14` → `tarefas-v15`, e o `?v=14` da lista de arquivos) e o `?v=14` dos `<link>`/`<script>` do `index.html`,
 senão os celulares que já instalaram continuam servindo os arquivos antigos do cache.
 
 ## Rodar localmente
